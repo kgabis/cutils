@@ -17,6 +17,12 @@
     THE SOFTWARE.
 */
 
+
+/* To update:
+curl https://raw.githubusercontent.com/kgabis/cutils/master/collections.h > collections.h
+curl https://raw.githubusercontent.com/kgabis/cutils/master/collections.c > collections.c
+*/
+
 #ifndef collections_h
 #define collections_h
 
@@ -30,14 +36,14 @@
 typedef struct dict dict_t;
 
 dict_t*      dict_make(void);
-void         dict_destroy(dict_t *hd);
-bool         dict_set(dict_t *hd, const char *key, void *value);
-void *       dict_get(const dict_t *hd, const char *key);
-void *       dict_get_value_at(const dict_t *hd, unsigned int ix);
-const char * dict_get_key_at(const dict_t *hd, unsigned int ix);
-unsigned int dict_count(const dict_t *hd);
-bool         dict_remove(dict_t *hd, const char *key);
-void         dict_clear(dict_t *hd);
+void         dict_destroy(dict_t *dict);
+bool         dict_set(dict_t *dict, const char *key, void *value);
+void *       dict_get(const dict_t *dict, const char *key);
+void *       dict_get_value_at(const dict_t *dict, unsigned int ix);
+const char * dict_get_key_at(const dict_t *dict, unsigned int ix);
+unsigned int dict_count(const dict_t *dict);
+bool         dict_remove(dict_t *dict, const char *key);
+void         dict_clear(dict_t *dict);
 
 //-----------------------------------------------------------------------------
 // Array

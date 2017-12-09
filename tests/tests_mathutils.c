@@ -17,7 +17,7 @@
     THE SOFTWARE.
 */
 
-#include "mathutils_tests.h"
+#include "tests_mathutils.h"
 
 #include "../mathutils.h"
 

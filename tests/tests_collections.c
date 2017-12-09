@@ -17,7 +17,7 @@
     THE SOFTWARE.
 */
 
-#include "collections_tests.h"
+#include "tests_collections.h"
 
 #include <stdlib.h>
 #include <assert.h>

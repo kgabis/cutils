@@ -19,8 +19,8 @@
 
 #include <stdio.h>
 
-#include "collections_tests.h"
-#include "mathutils_tests.h"
+#include "tests_collections.h"
+#include "tests_mathutils.h"
 
 int main(int argc, const char * argv[]) {
     collections_tests();

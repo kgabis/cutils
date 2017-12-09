@@ -66,172 +66,172 @@ dict_t* dict_make(void) {
     return dict;
 }
 
-void dict_destroy(dict_t *ht) {
-    dict_deinit(ht, true);
-    free(ht);
+void dict_destroy(dict_t *dict) {
+    dict_deinit(dict, true);
+    free(dict);
 }
 
-bool dict_set(dict_t *hd, const char *key, void *value) {
-    return dict_set_internal(hd, key, NULL, value);
+bool dict_set(dict_t *dict, const char *key, void *value) {
+    return dict_set_internal(dict, key, NULL, value);
 }
 
-void *dict_get(const dict_t *hd, const char *key) {
+void *dict_get(const dict_t *dict, const char *key) {
     unsigned long hash = hash_string(key);
     bool found = false;
-    unsigned long cell_ix = dict_get_cell_ix(hd, key, hash, &found);
+    unsigned long cell_ix = dict_get_cell_ix(dict, key, hash, &found);
     if (found == false) {
         return NULL;
     }
-    unsigned int item_ix = hd->cells[cell_ix];
-    return hd->values[item_ix];
+    unsigned int item_ix = dict->cells[cell_ix];
+    return dict->values[item_ix];
 }
 
-void *dict_get_value_at(const dict_t *hd, unsigned int ix) {
-    if (ix >= hd->count) {
+void *dict_get_value_at(const dict_t *dict, unsigned int ix) {
+    if (ix >= dict->count) {
         return NULL;
     }
-    return hd->values[ix];
+    return dict->values[ix];
 }
 
-const char *dict_get_key_at(const dict_t *hd, unsigned int ix) {
-    if (ix >= hd->count) {
+const char *dict_get_key_at(const dict_t *dict, unsigned int ix) {
+    if (ix >= dict->count) {
         return NULL;
     }
-    return hd->keys[ix];
+    return dict->keys[ix];
 }
 
-unsigned int dict_count(const dict_t *hd) {
-    return hd->count;
+unsigned int dict_count(const dict_t *dict) {
+    return dict->count;
 }
 
-bool dict_remove(dict_t *hd, const char *key) {
+bool dict_remove(dict_t *dict, const char *key) {
     unsigned long hash = hash_string(key);
     bool found = false;
-    unsigned int cell = dict_get_cell_ix(hd, key, hash, &found);
+    unsigned int cell = dict_get_cell_ix(dict, key, hash, &found);
     if (!found) {
         return false;
     }
 
-    unsigned int item_ix = hd->cells[cell];
-    free(hd->keys[item_ix]);
-    unsigned int last_item_ix = hd->count - 1;
+    unsigned int item_ix = dict->cells[cell];
+    free(dict->keys[item_ix]);
+    unsigned int last_item_ix = dict->count - 1;
     if (item_ix < last_item_ix) {
-        hd->keys[item_ix] = hd->keys[last_item_ix];
-        hd->values[item_ix] = hd->values[last_item_ix];
-        hd->cell_ixs[item_ix] = hd->cell_ixs[last_item_ix];
-        hd->hashes[item_ix] = hd->hashes[last_item_ix];
-        hd->cells[hd->cell_ixs[item_ix]] = item_ix;
+        dict->keys[item_ix] = dict->keys[last_item_ix];
+        dict->values[item_ix] = dict->values[last_item_ix];
+        dict->cell_ixs[item_ix] = dict->cell_ixs[last_item_ix];
+        dict->hashes[item_ix] = dict->hashes[last_item_ix];
+        dict->cells[dict->cell_ixs[item_ix]] = item_ix;
     }
-    hd->count--;
+    dict->count--;
 
     unsigned int i = cell;
     unsigned int j = i;
-    for (unsigned int x = 0; x < (hd->cell_capacity - 1); x++) {
-        j = (j + 1) & (hd->cell_capacity - 1);
-        if (hd->cells[j] == DICT_INVALID_IX) {
+    for (unsigned int x = 0; x < (dict->cell_capacity - 1); x++) {
+        j = (j + 1) & (dict->cell_capacity - 1);
+        if (dict->cells[j] == DICT_INVALID_IX) {
             break;
         }
-        unsigned int k = hd->hashes[hd->cells[j]] & (hd->cell_capacity - 1);
+        unsigned int k = dict->hashes[dict->cells[j]] & (dict->cell_capacity - 1);
         if ((j > i && (k <= i || k > j))
             || (j < i && (k <= i && k > j))) {
-            hd->cell_ixs[hd->cells[j]] = i;
-            hd->cells[i] = hd->cells[j];
+            dict->cell_ixs[dict->cells[j]] = i;
+            dict->cells[i] = dict->cells[j];
             i = j;
         }
     }
-    hd->cells[i] = DICT_INVALID_IX;
+    dict->cells[i] = DICT_INVALID_IX;
     return true;
 }
 
-void dict_clear(dict_t *hd) {
-    for (unsigned int i = 0; i < hd->count; i++) {
-        free(hd->keys[i]);
+void dict_clear(dict_t *dict) {
+    for (unsigned int i = 0; i < dict->count; i++) {
+        free(dict->keys[i]);
     }
-    hd->count = 0;
-    for (unsigned int i = 0; i < hd->cell_capacity; i++) {
-        hd->cells[i] = DICT_INVALID_IX;
+    dict->count = 0;
+    for (unsigned int i = 0; i < dict->cell_capacity; i++) {
+        dict->cells[i] = DICT_INVALID_IX;
     }
 }
 
 // Private definitions
-static bool dict_init(dict_t *hd, unsigned int initial_capacity) {
+static bool dict_init(dict_t *dict, unsigned int initial_capacity) {
     // todo: check initial capacity is a power of 2
-    hd->cells = NULL;
-    hd->keys = NULL;
-    hd->values = NULL;
-    hd->cell_ixs = NULL;
-    hd->hashes = NULL;
+    dict->cells = NULL;
+    dict->keys = NULL;
+    dict->values = NULL;
+    dict->cell_ixs = NULL;
+    dict->hashes = NULL;
 
-    hd->count = 0;
-    hd->cell_capacity = initial_capacity;
-    hd->item_capacity = (unsigned int)(initial_capacity * 0.7f);
+    dict->count = 0;
+    dict->cell_capacity = initial_capacity;
+    dict->item_capacity = (unsigned int)(initial_capacity * 0.7f);
 
-    hd->cells = malloc(hd->cell_capacity * sizeof(*hd->cells));
-    hd->keys = malloc(hd->item_capacity * sizeof(*hd->keys));
-    hd->values = malloc(hd->item_capacity * sizeof(*hd->values));
-    hd->cell_ixs = malloc(hd->item_capacity * sizeof(*hd->cell_ixs));
-    hd->hashes = malloc(hd->item_capacity * sizeof(*hd->hashes));
-    if (hd->cells == NULL
-        || hd->keys == NULL
-        || hd->values == NULL
-        || hd->cell_ixs == NULL
-        || hd->hashes == NULL) {
+    dict->cells = malloc(dict->cell_capacity * sizeof(*dict->cells));
+    dict->keys = malloc(dict->item_capacity * sizeof(*dict->keys));
+    dict->values = malloc(dict->item_capacity * sizeof(*dict->values));
+    dict->cell_ixs = malloc(dict->item_capacity * sizeof(*dict->cell_ixs));
+    dict->hashes = malloc(dict->item_capacity * sizeof(*dict->hashes));
+    if (dict->cells == NULL
+        || dict->keys == NULL
+        || dict->values == NULL
+        || dict->cell_ixs == NULL
+        || dict->hashes == NULL) {
         goto error;
     }
-    for (unsigned int i = 0; i < hd->cell_capacity; i++) {
-        hd->cells[i] = DICT_INVALID_IX;
+    for (unsigned int i = 0; i < dict->cell_capacity; i++) {
+        dict->cells[i] = DICT_INVALID_IX;
     }
     return true;
 error:
-    free(hd->cells);
-    free(hd->keys);
-    free(hd->values);
-    free(hd->cell_ixs);
-    free(hd->hashes);
+    free(dict->cells);
+    free(dict->keys);
+    free(dict->values);
+    free(dict->cell_ixs);
+    free(dict->hashes);
     return false;
 }
 
-static void dict_deinit(dict_t *hd, bool free_keys) {
+static void dict_deinit(dict_t *dict, bool free_keys) {
     if (free_keys) {
-        for (unsigned int i = 0; i < hd->count; i++) {
-            free(hd->keys[i]);
+        for (unsigned int i = 0; i < dict->count; i++) {
+            free(dict->keys[i]);
         }
     }
-    hd->count = 0;
-    hd->item_capacity = 0;
-    hd->cell_capacity = 0;
+    dict->count = 0;
+    dict->item_capacity = 0;
+    dict->cell_capacity = 0;
 
-    free(hd->cells);
-    free(hd->keys);
-    free(hd->values);
-    free(hd->cell_ixs);
-    free(hd->hashes);
+    free(dict->cells);
+    free(dict->keys);
+    free(dict->values);
+    free(dict->cell_ixs);
+    free(dict->hashes);
 
-    hd->cells = NULL;
-    hd->keys = NULL;
-    hd->values = NULL;
-    hd->cell_ixs = NULL;
-    hd->hashes = NULL;
+    dict->cells = NULL;
+    dict->keys = NULL;
+    dict->values = NULL;
+    dict->cell_ixs = NULL;
+    dict->hashes = NULL;
 }
 
-static unsigned int dict_get_cell_ix(const dict_t *hd,
-                                         const char *key,
-                                         unsigned long hash,
-                                         bool *out_found)
+static unsigned int dict_get_cell_ix(const dict_t *dict,
+                                     const char *key,
+                                     unsigned long hash,
+                                     bool *out_found)
 {
     *out_found = false;
-    unsigned int cell_ix = hash & (hd->cell_capacity - 1);
-    for (unsigned int i = 0; i < hd->cell_capacity; i++) {
-        unsigned int ix = (cell_ix + i) & (hd->cell_capacity - 1);
-        unsigned int cell = hd->cells[ix];
+    unsigned int cell_ix = hash & (dict->cell_capacity - 1);
+    for (unsigned int i = 0; i < dict->cell_capacity; i++) {
+        unsigned int ix = (cell_ix + i) & (dict->cell_capacity - 1);
+        unsigned int cell = dict->cells[ix];
         if (cell == DICT_INVALID_IX) {
             return ix;
         }
-        unsigned long hash_to_check = hd->hashes[cell];
+        unsigned long hash_to_check = dict->hashes[cell];
         if (hash != hash_to_check) {
             continue;
         }
-        const char *key_to_check = hd->keys[cell];
+        const char *key_to_check = dict->keys[cell];
         if (strcmp(key, key_to_check) == 0) {
             *out_found = true;
             return ix;
@@ -249,48 +249,48 @@ static unsigned long hash_string(const char *str) { /* djb2 */
     return hash;
 }
 
-static bool dict_grow_and_rehash(dict_t *hd) {
+static bool dict_grow_and_rehash(dict_t *dict) {
     dict_t new_hd;
-    bool succeeded = dict_init(&new_hd, hd->cell_capacity * 2);
+    bool succeeded = dict_init(&new_hd, dict->cell_capacity * 2);
     if (succeeded == false) {
         return false;
     }
-    for (unsigned int i = 0; i < hd->count; i++) {
-        char *key = hd->keys[i];
-        void *value = hd->values[i];
+    for (unsigned int i = 0; i < dict->count; i++) {
+        char *key = dict->keys[i];
+        void *value = dict->values[i];
         succeeded = dict_set_internal(&new_hd, key, key, value);
         if (succeeded == false) {
             dict_deinit(&new_hd, false);
             return false;
         }
     }
-    dict_deinit(hd, false);
-    *hd = new_hd;
+    dict_deinit(dict, false);
+    *dict = new_hd;
     return true;
 }
 
-static bool dict_set_internal(dict_t *hd, const char *ckey, char *mkey, void *value) {
+static bool dict_set_internal(dict_t *dict, const char *ckey, char *mkey, void *value) {
     unsigned long hash = hash_string(ckey);
     bool found = false;
-    unsigned int cell_ix = dict_get_cell_ix(hd, ckey, hash, &found);
+    unsigned int cell_ix = dict_get_cell_ix(dict, ckey, hash, &found);
     if (found) {
-        unsigned int item_ix = hd->cells[cell_ix];
-        hd->values[item_ix] = value;
+        unsigned int item_ix = dict->cells[cell_ix];
+        dict->values[item_ix] = value;
         return true;
     }
-    if (hd->count >= hd->item_capacity) {
-        bool succeeded = dict_grow_and_rehash(hd);
+    if (dict->count >= dict->item_capacity) {
+        bool succeeded = dict_grow_and_rehash(dict);
         if (succeeded == false) {
             return false;
         }
-        cell_ix = dict_get_cell_ix(hd, ckey, hash, &found);
+        cell_ix = dict_get_cell_ix(dict, ckey, hash, &found);
     }
-    hd->cells[cell_ix] = hd->count;
-    hd->keys[hd->count] = mkey != NULL ? mkey : strdup(ckey);
-    hd->values[hd->count] = value;
-    hd->cell_ixs[hd->count] = cell_ix;
-    hd->hashes[hd->count] = hash;
-    hd->count++;
+    dict->cells[cell_ix] = dict->count;
+    dict->keys[dict->count] = mkey != NULL ? mkey : strdup(ckey);
+    dict->values[dict->count] = value;
+    dict->cell_ixs[dict->count] = cell_ix;
+    dict->hashes[dict->count] = hash;
+    dict->count++;
     return true;
 }
 
