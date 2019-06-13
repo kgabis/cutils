@@ -26,11 +26,13 @@
 #include "../collections.h"
 
 static void dict_tests(void);
+static void ptrdict_tests(void);
 static void array_tests(void);
 static void ptrarray_tests(void);
 
 void collections_tests() {
     dict_tests();
+    ptrdict_tests();
     array_tests();
     ptrarray_tests();
 }
@@ -38,7 +40,7 @@ void collections_tests() {
 static void dict_tests() {
     puts("Running dict tests:");
     bool succeeded = false;
-    dict_t *dict = dict_make();
+    dict(char) *dict = dict_make();
     int count = 128;
     for (int i = 0; i < count; i++) {
         char buf[128];
@@ -55,10 +57,33 @@ static void dict_tests() {
     puts("dict tests: ok");
 }
 
+static void ptrdict_tests(void) {
+    puts("Running ptrdict tests:");
+    bool succeeded = false;
+    ptrdict(int, char) *dict = ptrdict_make();
+    int count = 128;
+    for (int i = 0; i < count; i++) {
+        int *val = malloc(sizeof(int));
+        *val = i;
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%d", i);
+        char *buf_cpy = strdup(buf);
+        succeeded = ptrdict_set(dict, val, buf_cpy);
+        assert(succeeded);
+    }
+    for (int i = 0; i < count; i++) {
+        int *key = ptrdict_get_key_at(dict, i);
+        char *val = ptrdict_get(dict, key);
+        int val_int = atoi(val);
+        assert(*key == val_int);
+    }
+    puts("ptrdict tests: ok");
+}
+
 static void array_tests() {
     puts("Running array tests:");
     int c = 1024;
-    array_t *int_arr = array_make(sizeof(int));
+    array(int) *int_arr = array_make(sizeof(int));
     for (int i = 0; i < c; i++) {
         array_add(int_arr, &i);
     }
@@ -73,7 +98,7 @@ static void array_tests() {
 static void ptrarray_tests() {
     puts("Running ptrarray tests:");
     int c = 1024;
-    ptrarray_t *int_arr = ptrarray_make();
+    ptrarray(int) *int_arr = ptrarray_make();
     for (int i = 0; i < c; i++) {
         int *el = malloc(sizeof(int));
         *el = i;
