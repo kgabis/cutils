@@ -319,7 +319,7 @@ typedef struct _ptrdict {
 
 // Private declarations
 static bool ptrdict_init(_ptrdict_t *pd, unsigned int initial_capacity);
-static void ptrdict_deinit(_ptrdict_t *pd, bool free_keys);
+static void ptrdict_deinit(_ptrdict_t *pd);
 static unsigned int ptrdict_get_cell_ix(const _ptrdict_t *pd, void *key, bool *out_found);
 static bool ptrdict_grow_and_rehash(_ptrdict_t *pd);
 static bool ptrdict_set_internal(_ptrdict_t *pd, void *key, void *value);
@@ -339,7 +339,7 @@ _ptrdict_t* ptrdict_make(void) {
 }
 
 void ptrdict_destroy(_ptrdict_t *dict) {
-    ptrdict_deinit(dict, true);
+    ptrdict_deinit(dict);
     free(dict);
 }
 
@@ -459,12 +459,7 @@ error:
     return false;
 }
 
-static void ptrdict_deinit(_ptrdict_t *dict, bool free_keys) {
-    if (free_keys) {
-        for (unsigned int i = 0; i < dict->count; i++) {
-            free(dict->keys[i]);
-        }
-    }
+static void ptrdict_deinit(_ptrdict_t *dict) {
     dict->count = 0;
     dict->item_capacity = 0;
     dict->cell_capacity = 0;
@@ -490,7 +485,7 @@ static unsigned int ptrdict_get_cell_ix(const _ptrdict_t *dict, void *key, bool 
             return ix;
         }
         void *key_to_check = dict->keys[cell];
-        if (strcmp(key, key_to_check) == 0) {
+        if (key == key_to_check) {
             *out_found = true;
             return ix;
         }
@@ -509,11 +504,11 @@ static bool ptrdict_grow_and_rehash(_ptrdict_t *dict) {
         void *value = dict->values[i];
         succeeded = ptrdict_set_internal(&new_hd, key, value);
         if (succeeded == false) {
-            ptrdict_deinit(&new_hd, false);
+            ptrdict_deinit(&new_hd);
             return false;
         }
     }
-    ptrdict_deinit(dict, false);
+    ptrdict_deinit(dict);
     *dict = new_hd;
     return true;
 }

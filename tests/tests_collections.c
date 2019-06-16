@@ -25,6 +25,8 @@
 
 #include "../collections.h"
 
+#define TEST_ITEMS_COUNT (1024 * 1024)
+
 static void dict_tests(void);
 static void ptrdict_tests(void);
 static void array_tests(void);
@@ -41,15 +43,14 @@ static void dict_tests() {
     puts("Running dict tests:");
     bool succeeded = false;
     dict(char) *dict = dict_make();
-    int count = 128;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         char buf[128];
         snprintf(buf, sizeof(buf), "%d", i);
         char *buf_cpy = strdup(buf);
         succeeded = dict_set(dict, buf, buf_cpy);
         assert(succeeded);
     }
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         const char *key = dict_get_key_at(dict, (unsigned int)i);
         char *val = dict_get(dict, key);
         assert(strcmp(key, val) == 0);
@@ -61,8 +62,7 @@ static void ptrdict_tests(void) {
     puts("Running ptrdict tests:");
     bool succeeded = false;
     ptrdict(int, char) *dict = ptrdict_make();
-    int count = 128;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         int *val = malloc(sizeof(int));
         *val = i;
         char buf[128];
@@ -71,7 +71,7 @@ static void ptrdict_tests(void) {
         succeeded = ptrdict_set(dict, val, buf_cpy);
         assert(succeeded);
     }
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         int *key = ptrdict_get_key_at(dict, i);
         char *val = ptrdict_get(dict, key);
         int val_int = atoi(val);
@@ -82,12 +82,11 @@ static void ptrdict_tests(void) {
 
 static void array_tests() {
     puts("Running array tests:");
-    int c = 1024;
     array(int) *int_arr = array_make(sizeof(int));
-    for (int i = 0; i < c; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         array_add(int_arr, &i);
     }
-    for (int i = 0; i < c; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         int *x = array_get(int_arr, (unsigned int)i);
         assert(*x == i);
     }
@@ -97,14 +96,13 @@ static void array_tests() {
 
 static void ptrarray_tests() {
     puts("Running ptrarray tests:");
-    int c = 1024;
     ptrarray(int) *int_arr = ptrarray_make();
-    for (int i = 0; i < c; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         int *el = malloc(sizeof(int));
         *el = i;
         ptrarray_add(int_arr, el);
     }
-    for (int i = 0; i < c; i++) {
+    for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         int *x = ptrarray_get(int_arr, (unsigned int)i);
         assert(*x == i);
     }
