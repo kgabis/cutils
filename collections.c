@@ -574,7 +574,7 @@ void array_destroy(_array_t *arr) {
 }
 
 bool array_add(_array_t *arr, void *value) {
-    if ((arr->count + 1) >= arr->capacity) {
+    if (arr->count >= arr->capacity) {
         assert(!arr->lock_capacity);
         if (arr->lock_capacity) {
             return false;
@@ -614,8 +614,14 @@ bool array_remove(_array_t *arr, unsigned int ix) {
     if (ix >= arr->count) {
         return false;
     }
+    if (ix == (arr->count - 1)) {
+        arr->count--;
+        return true;
+    }
     size_t to_move_bytes = (arr->count - 1 - ix) * arr->element_size;
-    memmove(arr->data + ix, arr->data + ix + 1, to_move_bytes);
+    void *dest = arr->data + (ix * arr->element_size);
+    void *src = arr->data + ((ix + 1) * arr->element_size);
+    memmove(dest, src, to_move_bytes);
     arr->count--;
     return true;
 }
