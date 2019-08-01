@@ -33,76 +33,81 @@
 // Dictionary
 //-----------------------------------------------------------------------------
 
-typedef struct _dict _dict_t;
+typedef struct dict_ dict_t_;
 
-#define dict(TYPE) _dict_t
+#define dict(TYPE) dict_t_
 
-_dict_t*     dict_make(void);
-void         dict_destroy(_dict_t *dict);
-bool         dict_set(_dict_t *dict, const char *key, void *value);
-void *       dict_get(const _dict_t *dict, const char *key);
-void *       dict_get_value_at(const _dict_t *dict, unsigned int ix);
-const char * dict_get_key_at(const _dict_t *dict, unsigned int ix);
-unsigned int dict_count(const _dict_t *dict);
-bool         dict_remove(_dict_t *dict, const char *key);
-void         dict_clear(_dict_t *dict);
+dict_t_*     dict_make(void);
+void         dict_destroy(dict_t_ *dict);
+bool         dict_set(dict_t_ *dict, const char *key, void *value);
+void *       dict_get(const dict_t_ *dict, const char *key);
+void *       dict_get_value_at(const dict_t_ *dict, unsigned int ix);
+const char * dict_get_key_at(const dict_t_ *dict, unsigned int ix);
+unsigned int dict_count(const dict_t_ *dict);
+bool         dict_remove(dict_t_ *dict, const char *key);
+void         dict_clear(dict_t_ *dict);
 
 //-----------------------------------------------------------------------------
 // Pointer dictionary
 //-----------------------------------------------------------------------------
 
-typedef struct _ptrdict _ptrdict_t;
+typedef struct ptrdict_ ptrdict_t_;
 
-#define ptrdict(KEY_TYPE, VALUE_TYPE) _ptrdict_t
+#define ptrdict(KEY_TYPE, VALUE_TYPE) ptrdict_t_
 
-_ptrdict_t*  ptrdict_make(void);
-void         ptrdict_destroy(_ptrdict_t *dict);
-bool         ptrdict_set(_ptrdict_t *dict, void *key, void *value);
-void *       ptrdict_get(const _ptrdict_t *dict, void *key);
-void *       ptrdict_get_value_at(const _ptrdict_t *dict, unsigned int ix);
-void *       ptrdict_get_key_at(const _ptrdict_t *dict, unsigned int ix);
-unsigned int ptrdict_count(const _ptrdict_t *dict);
-bool         ptrdict_remove(_ptrdict_t *dict, void *key);
-void         ptrdict_clear(_ptrdict_t *dict);
+ptrdict_t_*  ptrdict_make(void);
+void         ptrdict_destroy(ptrdict_t_ *dict);
+bool         ptrdict_set(ptrdict_t_ *dict, void *key, void *value);
+void *       ptrdict_get(const ptrdict_t_ *dict, void *key);
+void *       ptrdict_get_value_at(const ptrdict_t_ *dict, unsigned int ix);
+void *       ptrdict_get_key_at(const ptrdict_t_ *dict, unsigned int ix);
+unsigned int ptrdict_count(const ptrdict_t_ *dict);
+bool         ptrdict_remove(ptrdict_t_ *dict, void *key);
+void         ptrdict_clear(ptrdict_t_ *dict);
 
 //-----------------------------------------------------------------------------
 // Array
 //-----------------------------------------------------------------------------
 
-typedef struct _array _array_t;
+typedef struct array_ array_t_;
 
-#define array(TYPE) _array_t
+#define array(TYPE) array_t_
 
-_array_t*    array_make(size_t element_size);
-_array_t*    array_make_with_capacity(unsigned int capacity, size_t element_size);
-void         array_destroy(_array_t *arr);
-bool         array_add(_array_t *arr, void *value);
-void *       array_get(const _array_t *arr, unsigned int ix);
-unsigned int array_count(const _array_t *arr);
-bool         array_remove(_array_t *arr, unsigned int ix);
-void         array_clear(_array_t *arr);
-void         array_lock_capacity(_array_t *arr);
-int          array_get_index(const _array_t *arr, void *ptr);
+array_t_*    array_make(size_t element_size);
+array_t_*    array_make_with_capacity(unsigned int capacity, size_t element_size);
+void         array_destroy(array_t_ *arr);
+bool         array_add(array_t_ *arr, const void *value);
+bool         array_add_array(array_t_ *dest, const array_t_ *source);
+bool         array_pop(array_t_ *arr, void *out_value);
+void         array_set(array_t_ *arr, unsigned int ix, void *value);
+void *       array_get(const array_t_ *arr, unsigned int ix);
+void *       array_get_last(const array_t_ *arr);
+unsigned int array_count(const array_t_ *arr);
+bool         array_remove(array_t_ *arr, unsigned int ix);
+void         array_clear(array_t_ *arr);
+void         array_lock_capacity(array_t_ *arr);
+int          array_get_index(const array_t_ *arr, void *ptr);
 
 //-----------------------------------------------------------------------------
 // Pointer Array
 //-----------------------------------------------------------------------------
 
-typedef struct _ptrarray _ptrarray_t;
+typedef struct ptrarray_ ptrarray_t_;
 
-#define ptrarray(TYPE) _ptrarray_t
+#define ptrarray(TYPE) ptrarray_t_
 
-_ptrarray_t* ptrarray_make(void);
-_ptrarray_t* ptrarray_make_with_capacity(unsigned int capacity);
-void         ptrarray_destroy(_ptrarray_t *arr);
-bool         ptrarray_add(_ptrarray_t *arr, void *ptr);
-void *       ptrarray_get(const _ptrarray_t *arr, unsigned int ix);
-unsigned int ptrarray_count(const _ptrarray_t *arr);
-bool         ptrarray_remove(_ptrarray_t *arr, unsigned int ix);
-bool         ptrarray_remove_item(_ptrarray_t *arr, void *item);
-void         ptrarray_clear(_ptrarray_t *arr);
-void         ptrarray_lock_capacity(_ptrarray_t *arr);
-int          ptrarray_get_index(const _ptrarray_t *arr, void *ptr);
-void *       ptrarray_get_addr(_ptrarray_t *arr, unsigned int ix);
+ptrarray_t_* ptrarray_make(void);
+ptrarray_t_* ptrarray_make_with_capacity(unsigned int capacity);
+void         ptrarray_destroy(ptrarray_t_ *arr);
+bool         ptrarray_add(ptrarray_t_ *arr, void *ptr);
+bool         ptrarray_add_array(ptrarray_t_ *dest, const ptrarray_t_ *source);
+void *       ptrarray_get(const ptrarray_t_ *arr, unsigned int ix);
+unsigned int ptrarray_count(const ptrarray_t_ *arr);
+bool         ptrarray_remove(ptrarray_t_ *arr, unsigned int ix);
+bool         ptrarray_remove_item(ptrarray_t_ *arr, void *item);
+void         ptrarray_clear(ptrarray_t_ *arr);
+void         ptrarray_lock_capacity(ptrarray_t_ *arr);
+int          ptrarray_get_index(const ptrarray_t_ *arr, void *ptr);
+void *       ptrarray_get_addr(ptrarray_t_ *arr, unsigned int ix);
 
 #endif /* collections_h */
