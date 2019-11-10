@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017 Krzysztof Gabis
+ Copyright (c) 2019 Krzysztof Gabis
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <string.h>
 #include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 //-----------------------------------------------------------------------------
 // Dictionary
@@ -67,6 +69,9 @@ dict_t_* dict_make(void) {
 }
 
 void dict_destroy(dict_t_ *dict) {
+    if (dict == NULL) {
+        return;
+    }
     dict_deinit(dict, true);
     free(dict);
 }
@@ -339,6 +344,9 @@ ptrdict_t_* ptrdict_make(void) {
 }
 
 void ptrdict_destroy(ptrdict_t_ *dict) {
+    if (dict == NULL) {
+        return;
+    }
     ptrdict_deinit(dict);
     free(dict);
 }
@@ -551,7 +559,7 @@ typedef struct array_ {
 static bool array_init_with_capacity(array_t_ *arr, unsigned int capacity, size_t element_size);
 static void array_deinit(array_t_ *arr);
 
-array_t_* array_make(size_t element_size) {
+array_t_* array_make_(size_t element_size) {
     return array_make_with_capacity(0, element_size);
 }
 
@@ -569,6 +577,9 @@ array_t_* array_make_with_capacity(unsigned int capacity, size_t element_size) {
 }
 
 void array_destroy(array_t_ *arr) {
+    if (arr == NULL) {
+        return;
+    }
     array_deinit(arr);
     free(arr);
 }
@@ -589,8 +600,24 @@ bool array_add(array_t_ *arr, const void *value) {
         arr->data = new_data;
         arr->capacity = new_capacity;
     }
-    memcpy(arr->data + (arr->count * arr->element_size), value, arr->element_size);
+    if (value) {
+        memcpy(arr->data + (arr->count * arr->element_size), value, arr->element_size);
+    }
     arr->count++;
+    return true;
+}
+
+bool array_addn(array_t_ *arr, const void *values, unsigned int n) {
+    for (int i = 0; i < n; i++) {
+        unsigned char *value = NULL;
+        if (values) {
+            value = (unsigned char*)values + (i * arr->element_size);
+        }
+        bool ok = array_add(arr, value);
+        if (!ok) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -609,23 +636,49 @@ bool array_add_array(array_t_ *dest, const array_t_ *source) {
     return true;
 }
 
+bool array_push(array_t_ *arr, const void *value) {
+    return array_add(arr, value);
+}
+
 bool array_pop(array_t_ *arr, void *out_value) {
     if (arr->count <= 0) {
         return false;
     }
-    void *res = array_get(arr, arr->count - 1);
-    memcpy(out_value, res, arr->element_size);
+    if (out_value) {
+        void *res = array_get(arr, arr->count - 1);
+        memcpy(out_value, res, arr->element_size);
+    }
     array_remove(arr, arr->count - 1);
     return true;
 }
 
-void array_set(array_t_ *arr, unsigned int ix, void *value) {
+bool array_set(array_t_ *arr, unsigned int ix, void *value) {
     if (ix >= arr->count) {
         assert(false);
-        return;
+        return false;
     }
     size_t offset = ix * arr->element_size;
     memmove(arr->data + offset, value, arr->element_size);
+    return true;
+}
+
+bool array_setn(array_t_ *arr, unsigned int ix, void *values, unsigned int n) {
+    for (int i = 0; i < n; i++) {
+        unsigned int dest_ix = ix + i;
+        unsigned char *value = (unsigned char*)values + (i * arr->element_size);
+        if (dest_ix < array_count(arr)) {
+            bool ok = array_set(arr, dest_ix, value);
+            if (!ok) {
+                return false;
+            }
+        } else {
+            bool ok = array_add(arr, value);
+            if (!ok) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void * array_get(const array_t_ *arr, unsigned int ix) {
@@ -684,6 +737,18 @@ int array_get_index(const array_t_ *arr, void *ptr) {
     return -1;
 }
 
+void* array_data(array_t_ *arr) {
+    return arr->data;
+}
+
+const void*  array_const_data(const array_t_ *arr) {
+    return arr->data;
+}
+
+bool array_orphan_data(array_t_ *arr) {
+    return array_init_with_capacity(arr, 0, arr->element_size);
+}
+
 static bool array_init_with_capacity(array_t_ *arr, unsigned int capacity, size_t element_size) {
     arr->data = malloc(capacity * element_size);
     if (arr->data == NULL) {
@@ -726,12 +791,34 @@ ptrarray_t_* ptrarray_make_with_capacity(unsigned int capacity) {
 }
 
 void ptrarray_destroy(ptrarray_t_ *arr) {
+    if (arr == NULL) {
+        return;
+    }
     array_deinit(&arr->arr);
     free(arr);
 }
 
+void ptrarray_destroy_with_items_(ptrarray_t_ *arr, ptrarray_item_destroy_fn destroy_fn){
+    if (arr == NULL) {
+        return;
+    }
+
+    if (destroy_fn) {
+        for (int i = 0; i < ptrarray_count(arr); i++) {
+            void *item = ptrarray_get(arr, i);
+            destroy_fn(item);
+        }
+    }
+    
+    ptrarray_destroy(arr);
+}
+
 bool ptrarray_add(ptrarray_t_ *arr, void *ptr) {
     return array_add(&arr->arr, &ptr);
+}
+
+bool ptrarray_set(ptrarray_t_ *arr, unsigned int ix, void *ptr) {
+    return array_set(&arr->arr, ix, &ptr);
 }
 
 bool ptrarray_add_array(ptrarray_t_ *dest, const ptrarray_t_ *source) {
@@ -744,6 +831,28 @@ void * ptrarray_get(const ptrarray_t_ *arr, unsigned int ix) {
         return NULL;
     }
     return *(void**)res;
+}
+
+bool ptrarray_push(ptrarray_t_ *arr, void *ptr) {
+    return ptrarray_add(arr, ptr);
+}
+
+void *ptrarray_pop(ptrarray_t_ *arr) {
+    int ix = ptrarray_count(arr) - 1;
+    if (ix < 0) {
+        return NULL;
+    }
+    void *res = ptrarray_get(arr, ix);
+    ptrarray_remove(arr, ix);
+    return res;
+}
+
+void *ptrarray_top(ptrarray_t_ *arr) {
+    int count = ptrarray_count(arr);
+    if (count == 0) {
+        return NULL;
+    }
+    return ptrarray_get(arr, count - 1);
 }
 
 unsigned int ptrarray_count(const ptrarray_t_ *arr) {
@@ -790,5 +899,112 @@ void * ptrarray_get_addr(ptrarray_t_ *arr, unsigned int ix) {
     if (res == NULL) {
         return NULL;
     }
+    return res;
+}
+
+void* ptrarray_data(ptrarray_t_ *arr) {
+    return array_data(&arr->arr);
+}
+
+void ptrarray_reverse(ptrarray_t_ *arr) {
+    int count = ptrarray_count(arr);
+    if (count < 2) {
+        return;
+    }
+
+    for (int a_ix = 0; a_ix < (count / 2); a_ix++) {
+        int b_ix = count - a_ix - 1;
+        void *a = ptrarray_get(arr, a_ix);
+        void *b = ptrarray_get(arr, b_ix);
+        ptrarray_set(arr, a_ix, b);
+        ptrarray_set(arr, b_ix, a);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// String buffer
+//-----------------------------------------------------------------------------
+
+typedef struct strbuf {
+    array_t_ arr;
+} strbuf_t;
+
+strbuf_t* strbuf_make(void) {
+    strbuf_t *res = strbuf_make_with_capacity(1);
+    return res;
+}
+
+strbuf_t* strbuf_make_with_capacity(unsigned int capacity) {
+    strbuf_t *buf = malloc(sizeof(strbuf_t));
+    if (buf == NULL) {
+        return NULL;
+    }
+    bool succeeded = array_init_with_capacity(&buf->arr, capacity, sizeof(char));
+    if (succeeded == false) {
+        free(buf);
+        return NULL;
+    }
+    char nul = '\0';
+    array_add(&buf->arr, &nul);
+    return buf;
+}
+
+void strbuf_destroy(strbuf_t *buf) {
+    if (buf == NULL) {
+        return;
+    }
+    array_deinit(&buf->arr);
+    free(buf);
+}
+
+void strbuf_clear(strbuf_t *buf) {
+    array_clear(&buf->arr);
+    strbuf_append(buf, "");
+}
+
+bool strbuf_append(strbuf_t *buf, const char *str) {
+    size_t len = array_count(&buf->arr);
+    int str_len = 0;
+    char c = str[str_len];
+    while (c != '\0') {
+        if (str_len == 0 && len > 0) {
+            array_set(&buf->arr, (unsigned int)len - 1, &c);
+        } else {
+            array_add(&buf->arr, &c);
+        }
+
+        str_len++;
+        c = str[str_len];
+    }
+    if (str_len > 0) {
+        char nul = '\0';
+        array_add(&buf->arr, &nul);
+    }
+    return true;
+}
+
+bool strbuf_appendf(strbuf_t *buf, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int to_write = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+    va_start(args, fmt);
+    char *res = (char*)malloc(to_write + 1);
+    int written = vsprintf(res, fmt, args);
+    assert(written == to_write);
+    va_end(args);
+    bool ok = strbuf_append(buf, res);
+    free(res);
+    return ok;
+}
+
+const char * strbuf_get_string(strbuf_t *buf) {
+    return array_data(&buf->arr);
+}
+
+const char * strbuf_get_string_and_destroy(strbuf_t *buf) {
+    const char *res = array_data(&buf->arr);
+    array_orphan_data(&buf->arr);
+    strbuf_destroy(buf);
     return res;
 }

@@ -82,7 +82,7 @@ static void ptrdict_tests(void) {
 
 static void array_tests() {
     puts("Running array tests:");
-    array(int) *int_arr = array_make(sizeof(int));
+    array(int) *int_arr = array_make(int);
     for (int i = 0; i < TEST_ITEMS_COUNT; i++) {
         array_add(int_arr, &i);
     }
